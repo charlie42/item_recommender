@@ -1,0 +1,5 @@
+mlxtend
+scikit-learn
+pandas==1.5.3
+pyyaml
+joblib
