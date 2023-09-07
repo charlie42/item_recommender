@@ -9,7 +9,6 @@ Processes your dataset of assessment responses and recommends screener items for
 - [License](#license)
 
 ## Installation
-
 To install item-recommender, follow these steps:
 
 1. Clone the repository to your local machine:
@@ -26,8 +25,9 @@ To install item-recommender, follow these steps:
 
 ## Usage
 To use item-recommender, run the following command:
-`item-recommender dataset-path DATASET_PATH`
-Replace DATASET_PATH with the path to your dataset. The name of teh file will be used as the name of the directory where the output will be stored.
+`item-recommender --dataset-path [DATASET_PATH] --config-path [CONFIG PATH]`
+
+Replace [DATASET_PATH] with the path to your dataset in csv format, and [CONFIG_PATH] with the path to the config file. The example of the config file format is in the example_config subdirectory. The name of the dataset file will be used as the name of the directory where the output will be stored. Output columns named should start with "Output."
 
 ## License
 This project is licensed under the MIT License.
