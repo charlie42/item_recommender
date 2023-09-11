@@ -1,22 +1,15 @@
 from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer, KNNImputer
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.feature_selection import RFE
-from mlxtend.feature_selection import SequentialFeatureSelector as SFS
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import HistGradientBoostingClassifier
+from item_recommender.config import Config
 
 class PipelineBuilder:
-    def __init__(self, pipeline_config):
-        self.pipeline_config = pipeline_config
-
-    def get_pipeline(self):
-        """Return the pipeline."""
-        return self._build_pipeline()
+    """Build a pipeline from the config."""
     
-    def _build_pipeline(self):
+    def __init__(self):
+        pass
+
+    def build_pipeline(self, pipeline_config):
         """Build the pipeline."""
-        steps = self.pipeline_config["steps"]
+        steps = pipeline_config["steps"]
         parsed_steps = self._parse_steps(steps)
         return Pipeline(parsed_steps)
 
@@ -34,7 +27,7 @@ class PipelineBuilder:
             config_reader = Config()
 
             parsed_steps.append(
-                (step_name, config_reader.parse_item(step))
+                (step_name, config_reader.get_item(step))
             )
 
         return parsed_steps

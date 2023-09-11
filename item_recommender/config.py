@@ -5,15 +5,15 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.feature_selection import RFE
+from sklearn.pipeline import Pipeline
 from mlxtend.feature_selection import SequentialFeatureSelector as SFS
 from scipy.stats import loguniform
 from item_recommender.pipeline_builder import PipelineBuilder
-from item_recommender.config_reader import Config
-from sklearn.pipeline import Pipeline
 
 class Config():
+    """Parse the config from file, or return a specific item."""
 
-    _class_dict = {
+    CLASS_DICT = {
         "randomized_search": RandomizedSearchCV,
         "logistic_regression": LogisticRegression,
         "histgradientboosting": HistGradientBoostingClassifier,
@@ -28,17 +28,35 @@ class Config():
         "pipeline": Pipeline,
     }
 
-    def __init__(self, path, mode):
-        self.config = self.load_config(path)
-        self.config["mode"] = mode # Append mode from args to config
-
-    def _load_config(self, path):
-        """Load the config from file."""
-        return yaml.safe_load(open(path, "r"))
-    
-    def parse_item(self, item):
+    def __init__(self):
+        self.config = None
+        
+    def load_config(self, path, mode="DEBUG"):
+        """Load the config from file, append mode."""
+        config = yaml.safe_load(open(path, "r", encoding="utf-8"))
+        config["mode"] = mode
+        self.config = config
+        
+    def get_item(self, item_path):
         """
-        Parse an item from the config.
+        Return a specific item from the config.
+        Either: get_specific_item("outer_cv.n_splits")
+        Or: get_specific_item("n_splits")
+        If using the second option, returning the first item found.
+        If item has a "class" key, return an instance of the class with the
+        given parameters.
+        """
+        item_path = item_path.split(".")
+        item = self.config
+        for path in item_path:
+            item = item[path]
+        if "class" in item:
+            return self._parse_class(item)
+        return item
+    
+    def _parse_class(self, item):
+        """
+        Parse an class from the config.
         If the item has a "class" key, return an instance of the class with the
         given parameters.
         If class is "Pipeline", build a pipeline with the given steps.
@@ -48,16 +66,16 @@ class Config():
             class_params = item["params"]
 
             if class_name == "pipeline":
-                return PipelineBuilder(class_params).build_pipeline()
+                return PipelineBuilder().build_pipeline(class_params)
             else:
                 return self._get_class(class_name, class_params)
         else:
-            return item
+            raise ValueError("Item does not have a class key.")
+    
+    def _get_class(self, class_name, class_params):
+        """Return the class with the given name and parameters."""
+        class_ = self.CLASS_DICT[class_name]
+        return class_(**class_params)
+    
+    
         
-    # def get_single_value(self, key_hierarchy):
-    #     """Return the value for the given key hierarchy, 
-    #     e.g. ["hp_search", "n_iter"]."""
-    #     value = self.config
-    #     for key in key_hierarchy:
-    #         value = value[key]
-    #     return value

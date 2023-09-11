@@ -57,6 +57,7 @@ hp_search:
               scoring: roc_auc
               n_jobs: -1
               verbose: 2
+            percentage for opt n features: 0.95
     param_distributions: 
       logistic_regression:
         model_C: 
@@ -98,3 +99,12 @@ hp_search:
     error_score: raise
     random_state: 0
     verbose: 1
+metric: roc_auc
+cv: 
+  class: stratified_kfold
+  params:
+    n_splits: 5
+    shuffle: True
+    random_state: 0
+n_features_to_evaluate: 27
+output column prefix: "Output."
