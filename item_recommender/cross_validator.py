@@ -11,10 +11,9 @@ class CrossValidator:
         self.config = config
         self.split_data = split_data
         self.output_column = output_column
-        self.n_features_to_check = config["n_features_to_check"]
+        self.n_features_to_check = config["n features to check"]
         self.metric = config["metric"]
         self.n_splits = config["outer_cv"]["n_splits"]
-        self.n_features_to_evaluate = config["n_features_to_evaluate"]
         self.cv = Config().get_item(config["cv"])
         
         self.cv_search_objects = []
@@ -23,8 +22,11 @@ class CrossValidator:
     def cross_validate(self):
         """Perform outer cross-validation on the training set."""
         X_train, _, y_train, _ = self.split_data
+        print(f"Outer cross-validation for {self.output_column}")
 
         for fold in self.cv.split(X_train, y_train):
+            print(f"Fold {fold} of {self.output_column}")
+
             # Split the training set into train and test folds
             train_index, test_index = fold
             X_train_fold, X_test_fold = X_train.iloc[train_index], X_train.iloc[test_index]

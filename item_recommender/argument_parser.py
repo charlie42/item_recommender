@@ -4,13 +4,13 @@ class ArgumentParser:
     """Argument parser for the recommender script."""
 
     def __init__(self):
-        pass
+        self.args = self._parse_arguments()
 
-    def parse_arguments(self):
+    def _parse_arguments(self):
         """Parse command-line arguments."""
         parser = argparse.ArgumentParser()
         parser.add_argument(
-            "--dataset-path", 
+            "--data-path", 
             type=str, 
             help="Path to the dataset file")
         parser.add_argument(

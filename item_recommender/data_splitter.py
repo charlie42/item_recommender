@@ -4,17 +4,18 @@ class DataSplitter:
     """
     Split the data into train and test sets.
     """
-    
+
     def __init__(self, data, output_column):
         self.data = data
         self.output_column = output_column
+        self.split_data = None
         
-    def split_data(self, config):
+    def split(self, config):
         """
         Split the data into train and test sets.
         Returns a dictionary with the split data (X_train, X_test, y_train, y_test)
         """
-        split_percentage = config["split_percentage"]
+        split_percentage = config["split percentage"]
         
         # Split train and test sets
         X_train, X_test, y_train, y_test = self._split_data(split_percentage)

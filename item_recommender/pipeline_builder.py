@@ -3,7 +3,7 @@ from item_recommender.config import Config
 
 class PipelineBuilder:
     """Build a pipeline from the config."""
-    
+
     def __init__(self):
         pass
 
