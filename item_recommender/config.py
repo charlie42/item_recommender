@@ -8,9 +8,8 @@ from sklearn.feature_selection import RFE
 from sklearn.pipeline import Pipeline
 from mlxtend.feature_selection import SequentialFeatureSelector as SFS
 from scipy.stats import loguniform
-from item_recommender.pipeline_builder import PipelineBuilder
 
-class Config():
+class Config:
     """Parse the config from file, or return a specific item."""
 
     CLASS_DICT = {
@@ -36,6 +35,7 @@ class Config():
         config = yaml.safe_load(open(path, "r", encoding="utf-8"))
         config["mode"] = mode
         self.config = config
+        return config
         
     def get_item(self, item_path):
         """
@@ -66,6 +66,7 @@ class Config():
             class_params = item["params"]
 
             if class_name == "pipeline":
+                from pipeline_builder import PipelineBuilder
                 return PipelineBuilder().build_pipeline(class_params)
             else:
                 return self._get_class(class_name, class_params)

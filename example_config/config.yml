@@ -1,110 +1,112 @@
-hp_search:
-  class: randomized_search
-  params:
-    estimator: 
-      class: pipeline
-      params:
-        steps:  
-          -
-            name: imputer
-            class: simple_imputer
+outer_cv:
+  hp_search:
+    class: randomized_search
+    params:
+      estimator: 
+        class: pipeline
+        params:
+          steps:  
+            -
+              name: imputer
+              class: simple_imputer
+              params:
+                strategy: mean
+            -
+              name: scaler
+              class: standard_scaler
+              params: []
+            - 
+              name: rfe
+              class: rfe
+              params:
+                estimator: null
+                importance_getter: "named_steps.model.coef_"
+                n_features_to_select: 27
+                step: 1
+                verbose: 0
+            -
+              name: sfs 
+              class: sfs
+              params:
+                estimator: 
+                  class: pipeline
+                  params:
+                    steps:  
+                      -
+                        name: imputer
+                        class: simple_imputer
+                        params:
+                          strategy: mean
+                      -
+                        name: scaler
+                        class: standard_scaler
+                        params: []
+                      - 
+                        name: model
+                        class: logistic_regression
+                        params:
+                          solver: saga
+                k_features: 27
+                cv: 
+                  class: stratified_kfold
+                  params:
+                    n_splits: 5
+                    shuffle: True
+                    random_state: 0 
+                forward: True
+                floating: True
+                scoring: roc_auc
+                n_jobs: -1
+                verbose: 2
+              percentage for opt n features: 0.95
+      param_distributions: 
+        logistic_regression:
+          model_C: 
+            class: loguniform
             params:
-              strategy: mean
-          -
-            name: scaler
-            class: standard_scaler
-            params: []
-          - 
-            name: rfe
-            class: rfe
+              low: 1e-05
+              high: 1e4
+          model__penalty: [l1, l2, elasticnet]
+          model__class_weight: [balanced, None]
+          model__l1_ratio:
+            class: uniform
             params:
-              estimator: null
-              importance_getter: "named_steps.model.coef_"
-              n_features_to_select: 27
-              step: 1
-              verbose: 0
-          -
-            name: sfs 
-            class: sfs
+              low: 0
+              high: 1
+        histgradientboost:
+          model_learning_rate:
+            class: loguniform
             params:
-              estimator: 
-                class: pipeline
-                params:
-                  steps:  
-                    -
-                      name: imputer
-                      class: simple_imputer
-                      params:
-                        strategy: mean
-                    -
-                      name: scaler
-                      class: standard_scaler
-                      params: []
-                    - 
-                      name: model
-                      class: logistic_regression
-                      params:
-                        solver: saga
-              k_features: 27
-              cv: 
-                class: stratified_kfold
-                params:
-                  n_splits: 5
-                  shuffle: True
-                  random_state: 0 
-              forward: True
-              floating: True
-              scoring: roc_auc
-              n_jobs: -1
-              verbose: 2
-            percentage for opt n features: 0.95
-    param_distributions: 
-      logistic_regression:
-        model_C: 
-          class: loguniform
-          params:
-            low: 1e-05
-            high: 1e4
-        model__penalty: [l1, l2, elasticnet]
-        model__class_weight: [balanced, None]
-        model__l1_ratio:
-          class: uniform
-          params:
-            low: 0
-            high: 1
-      histgradientboost:
-        model_learning_rate:
-          class: loguniform
-          params:
-            low: 0.001
-            high: 1
-        model_max_depth: [3, 5, 7, None]
-        model_max_iter: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-        model_min_samples_leaf: [1, 2, 4]
-        model_l2_regularization:
-          class: loguniform
-          params:
-            low: 0.001
-            high: 1000
-    n_iter: 50
-    scoring: roc_auc
-    n_jobs: -1
-    cv: 
-      class: stratified_kfold
-      params:
-        n_splits: 5
-        shuffle: True
-        random_state: 0
-    refit: True
-    error_score: raise
-    random_state: 0
-    verbose: 1
-metric: roc_auc
-cv: 
-  class: stratified_kfold
-  params:
-    n_splits: 5
-    shuffle: True
-    random_state: 0
-n_features_to_evaluate: 27
-output column prefix: "Output."
+              low: 0.001
+              high: 1
+          model_max_depth: [3, 5, 7, None]
+          model_max_iter: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+          model_min_samples_leaf: [1, 2, 4]
+          model_l2_regularization:
+            class: loguniform
+            params:
+              low: 0.001
+              high: 1000
+      n_iter: 50
+      scoring: roc_auc
+      n_jobs: -1
+      cv: 
+        class: stratified_kfold
+        params:
+          n_splits: 5
+          shuffle: True
+          random_state: 0
+      refit: True
+      error_score: raise
+      random_state: 0
+      verbose: 1
+  metric: roc_auc
+  cv: 
+    class: stratified_kfold
+    params:
+      n_splits: 5
+      shuffle: True
+      random_state: 0
+  n features to check: 27  
+  split percentage: 0.2
+output column prefix: "Diag."
