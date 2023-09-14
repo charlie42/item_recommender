@@ -20,5 +20,6 @@ class ArgumentParser:
         parser.add_argument(
             "--mode", 
             type=str, 
-            help="Mode of the script: DEV, DEBUG, or PROD")
+            help="Mode of the script: DEV, DEBUG, or PROD",
+            default="DEBUG")
         return parser.parse_args()

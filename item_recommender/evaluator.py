@@ -5,7 +5,7 @@ class Evaluator:
     """Evaluate the performance of a model"""
 
     METRIC_DICT = {
-        "auc": roc_auc_score,
+        "roc_auc": roc_auc_score,
         "gmean": gmean,
     }
 
@@ -16,7 +16,7 @@ class Evaluator:
 
     def evaluate(self, metric):
         """Evaluate the model."""
-        if metric == "auc":
+        if metric in self.METRIC_DICT.keys():
             return self._evaluate_metric(metric, predict_proba=True)
         else:
             raise ValueError(f"Metric {metric} not supported.")
