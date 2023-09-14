@@ -1,5 +1,5 @@
-outer_cv:
-  hp_search:
+outer cv:
+  hp search:
     class: randomized_search
     params:
       estimator: 
@@ -14,12 +14,29 @@ outer_cv:
             -
               name: scaler
               class: standard_scaler
-              params: []
+              params: {}
             - 
               name: rfe
               class: rfe
               params:
-                estimator: null
+                estimator: 
+                  class: pipeline
+                  params:
+                    steps:  
+                      -
+                        name: imputer
+                        class: simple_imputer
+                        params:
+                          strategy: mean
+                      -
+                        name: scaler
+                        class: standard_scaler
+                        params: {}
+                      - 
+                        name: model
+                        class: logistic_regression
+                        params:
+                          solver: saga
                 importance_getter: "named_steps.model.coef_"
                 n_features_to_select: 27
                 step: 1
@@ -40,7 +57,7 @@ outer_cv:
                       -
                         name: scaler
                         class: standard_scaler
-                        params: []
+                        params: {}
                       - 
                         name: model
                         class: logistic_regression
@@ -48,7 +65,7 @@ outer_cv:
                           solver: saga
                 k_features: 27
                 cv: 
-                  class: stratified_kfold
+                  class: stratified_k_fold
                   params:
                     n_splits: 5
                     shuffle: True
@@ -59,39 +76,25 @@ outer_cv:
                 n_jobs: -1
                 verbose: 2
               percentage for opt n features: 0.95
+            -
+              name: model
+              class: logistic_regression
+              params:
+                solver: saga
       param_distributions: 
-        logistic_regression:
-          model_C: 
-            class: loguniform
-            params:
-              low: 1e-05
-              high: 1e4
-          model__penalty: [l1, l2, elasticnet]
-          model__class_weight: [balanced, None]
-          model__l1_ratio:
-            class: uniform
-            params:
-              low: 0
-              high: 1
-        histgradientboost:
-          model_learning_rate:
-            class: loguniform
-            params:
-              low: 0.001
-              high: 1
-          model_max_depth: [3, 5, 7, None]
-          model_max_iter: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-          model_min_samples_leaf: [1, 2, 4]
-          model_l2_regularization:
-            class: loguniform
-            params:
-              low: 0.001
-              high: 1000
-      n_iter: 50
+        model__C: 
+          class: loguniform
+          params: [0.001, 1000]
+        model__penalty: [l1, l2, elasticnet]
+        model__class_weight: [balanced, None]
+        model__l1_ratio:
+          class: uniform
+          params: [0, 1]
+      n_iter: 500
       scoring: roc_auc
       n_jobs: -1
       cv: 
-        class: stratified_kfold
+        class: stratified_k_fold
         params:
           n_splits: 5
           shuffle: True
@@ -102,7 +105,7 @@ outer_cv:
       verbose: 1
   metric: roc_auc
   cv: 
-    class: stratified_kfold
+    class: stratified_k_fold
     params:
       n_splits: 5
       shuffle: True
@@ -110,3 +113,15 @@ outer_cv:
   n features to check: 27  
   split percentage: 0.2
 output column prefix: "Diag."
+modes:
+  DEV:
+    param_distributions: 
+        model__C: 
+          class: loguniform
+          params: [0.001, 1000]
+    n_iter: 2
+    n_splits: 2
+    n features to check: 2
+  DEBUG:
+    n_splits: 4
+    n_iter: 50

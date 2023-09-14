@@ -1,7 +1,6 @@
 from item_recommender.data_splitter import DataSplitter
 from item_recommender.hyperparameter_search import HyperparameterSearch
 from item_recommender.evaluator import Evaluator
-from item_recommender.config import Config
 from item_recommender.feature_subset_extractor import FeatureSubsetExtractor
 
 class CrossValidator:
@@ -11,21 +10,22 @@ class CrossValidator:
         self.config = config
         self.split_data = split_data
         self.output_column = output_column
-        self.n_features_to_check = config["n features to check"]
-        self.metric = config["metric"]
-        self.n_splits = config["outer_cv"]["n_splits"]
-        self.cv = Config().get_item(config["cv"])
+        self.n_features_to_check = config.get_item("outer cv.n features to check")
+        self.metric = config.get_item("outer cv.metric")
+        self.cv = config.get_item("outer cv.cv")
         
         self.cv_search_objects = []
         self.performance = None
 
     def cross_validate(self):
         """Perform outer cross-validation on the training set."""
-        X_train, _, y_train, _ = self.split_data
+        X_train = self.split_data["X_train"]
+        y_train = self.split_data["y_train"]
+
         print(f"Outer cross-validation for {self.output_column}")
 
-        for fold in self.cv.split(X_train, y_train):
-            print(f"Fold {fold} of {self.output_column}")
+        for i, fold in enumerate(self.cv.split(X_train, y_train)):
+            print(f"Fold {i + 1}/{self.cv.get_n_splits()}")
 
             # Split the training set into train and test folds
             train_index, test_index = fold
@@ -47,10 +47,6 @@ class CrossValidator:
             )
 
         return self.output_column, self.cv_search_objects, self.performance
-
-    def _split_data(self, config):
-        data_splitter = DataSplitter(self.data, self.output_column)
-        return data_splitter.split_data(config)
     
     def _evaluate_performance_for_fold(self, model, X_test, y_test):
         # Evaluate performance on all features
@@ -86,7 +82,7 @@ class CrossValidator:
 
         feature_selector = FeatureSubsetExtractor(model, self.config)
 
-        for n_features in range(1, self.n_features_to_evaluate + 1):
+        for n_features in range(1, self.n_features_to_check + 1):
 
             features = feature_selector.get_n_feature_indices(n_features)
             perf_on_features[n_features].append(self._evaluate_performance(

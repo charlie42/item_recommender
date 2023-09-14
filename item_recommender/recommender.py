@@ -14,7 +14,9 @@ def process_output(args):
     output_column, data, config = args
     
     # Split the data
-    split_data = DataSplitter(data, output_column).split(config["outer_cv"])
+    split_data = DataSplitter(data, output_column).split(
+        config.get_item("outer cv.split percentage")
+    )
 
     # Perform cross-validation
     output, fitted_objects, perforamance = CrossValidator(
@@ -27,7 +29,7 @@ def process_output(args):
 def aggregate_results(results):
     """
     Aggregate the results from all output columns.
-    Format of perforamnce: {
+    Format of perforamnce object: {
         "perf_all_features": [0.8, 0.9, 0.7, 0.8, 0.9]
         "perf_all_checked_features": [0.7, 0.8, 0.6, 0.7, 0.8],
         "opt_ns_of_features": [2, 3, 4, 5, 6],
@@ -67,8 +69,11 @@ def main():
     args = ArgumentParser().args
 
     # Load the config
-    config = Config().load_config(args.config_path, args.mode)
+    config = Config()
+    config.load_config(args.config_path, args.mode)
     print("Config loaded")
+    print("DEBUG outer cv", config.get_item("outer cv"), "\n")
+    print("DEBUG outer cv.cv", config.get_item("outer cv.cv"), "\n")
     
     # Load the dataset
     data_loader = DataLoader(args.data_path, config)
