@@ -10,6 +10,7 @@ setup(
         "pandas",
         "pyyaml",
         "joblib",
+        "threadpoolctl",
     ],
     entry_points={
         'console_scripts': [

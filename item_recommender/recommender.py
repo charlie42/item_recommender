@@ -3,6 +3,7 @@ import time
 import multiprocessing
 import joblib
 import pandas as pd
+from threadpoolctl import threadpool_limits
 from item_recommender.data_loader import DataLoader
 from item_recommender.config import Config
 from item_recommender.data_splitter import DataSplitter
@@ -62,7 +63,11 @@ def main():
     )
 
     # Create a multiprocessing Pool to process output columns in parallel
-    with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
+    with multiprocessing.Pool(
+        processes=multiprocessing.cpu_count(),
+        initializer=threadpool_limits,
+        initargs=(1,)
+    ) as pool:
         results = pool.map(
             process_output,
             [
