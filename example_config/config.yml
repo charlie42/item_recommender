@@ -1,127 +1,19 @@
-outer cv:
-  hp search:
-    class: randomized_search
-    params:
-      estimator: 
-        class: pipeline
-        params:
-          steps:  
-            -
-              name: imputer
-              class: simple_imputer
-              params:
-                strategy: mean
-            -
-              name: scaler
-              class: standard_scaler
-              params: {}
-            - 
-              name: rfe
-              class: rfe
-              params:
-                estimator: 
-                  class: pipeline
-                  params:
-                    steps:  
-                      -
-                        name: imputer
-                        class: simple_imputer
-                        params:
-                          strategy: mean
-                      -
-                        name: scaler
-                        class: standard_scaler
-                        params: {}
-                      - 
-                        name: model
-                        class: logistic_regression
-                        params:
-                          solver: saga
-                importance_getter: "named_steps.model.coef_"
-                n_features_to_select: 27
-                step: 1
-                verbose: 0
-            -
-              name: sfs 
-              class: sfs
-              params:
-                estimator: 
-                  class: pipeline
-                  params:
-                    steps:  
-                      -
-                        name: imputer
-                        class: simple_imputer
-                        params:
-                          strategy: mean
-                      -
-                        name: scaler
-                        class: standard_scaler
-                        params: {}
-                      - 
-                        name: model
-                        class: logistic_regression
-                        params:
-                          solver: saga
-                k_features: 27
-                cv: 
-                  class: stratified_k_fold
-                  params:
-                    n_splits: 5
-                    shuffle: True
-                    random_state: 0 
-                forward: True
-                floating: True
-                scoring: roc_auc
-                n_jobs: -1
-                verbose: 2
-              percentage for opt n features: 0.95
-            -
-              name: model
-              class: logistic_regression
-              params:
-                solver: saga
-      param_distributions: 
-        model__C: 
-          class: loguniform
-          params: [0.001, 1000]
-        model__penalty: [l1, l2, elasticnet]
-        model__class_weight: [balanced, None]
-        model__l1_ratio:
-          class: uniform
-          params: [0, 1]
-      n_iter: 500
-      scoring: roc_auc
-      n_jobs: -1
-      cv: 
-        class: stratified_k_fold
-        params:
-          n_splits: 5
-          shuffle: True
-          random_state: 0
-      refit: True
-      error_score: raise
-      random_state: 0
-      verbose: 1
-  metric: roc_auc
-  cv: 
-    class: stratified_k_fold
-    params:
-      n_splits: 5
-      shuffle: True
-      random_state: 0
-  n features to check: 27  
-  split percentage: 0.2
+metric: roc_auc
+n features to check: 27
+percentage for opt n features: 0.95
+split percentage: 0.2
+outer cv n splits: 5
+inner cv n splits: 5
+hp search n iter: 500
 output column prefix: "Diag."
 modes:
   DEV:
-    param_distributions: 
-        model__C: 
-          class: loguniform
-          params: [0.001, 1000]
-    n_iter: 2
-    n_splits: 2
+    outer cv n splits: 2
+    inner cv n splits: 2
+    hp search n iter: 2
     n features to check: 2
   DEBUG:
-    n_splits: 4
-    n_iter: 50
+    outer cv n splits: 4
+    inner cv n splits: 4
+    hp search n iter: 50
+  PROD: {}

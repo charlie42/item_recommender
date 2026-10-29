@@ -1,7 +1,8 @@
-import argparse
+import os
 import time
 import multiprocessing
 import joblib
+import pandas as pd
 from item_recommender.data_loader import DataLoader
 from item_recommender.config import Config
 from item_recommender.data_splitter import DataSplitter
@@ -11,57 +12,31 @@ from item_recommender.argument_parser import ArgumentParser
 def process_output(args):
     """Process a single output column."""
 
-    output_column, data, config = args
-    
+    output_column, output_columns, data, config = args
+
     # Split the data
-    split_data = DataSplitter(data, output_column).split(
-        config.get_item("outer cv.split percentage")
+    split_data = DataSplitter(data, output_columns, output_column).split(
+        config.get_item("split percentage")
     )
 
-    # Perform cross-validation
-    output, fitted_objects, perforamance = CrossValidator(
-        split_data, 
-        output_column, 
-        config
-    ).cross_validate()
-    return output, fitted_objects, perforamance
+    # Perform cross-validation, then select items on the whole training set
+    cross_validator = CrossValidator(split_data, output_column, config)
+    cv_performances = cross_validator.cross_validate()
+    return output_column, cross_validator.recommend(cv_performances)
 
-def aggregate_results(results):
-    """
-    Aggregate the results from all output columns.
-    Format of perforamnce object: {
-        "perf_all_features": [0.8, 0.9, 0.7, 0.8, 0.9]
-        "perf_all_checked_features": [0.7, 0.8, 0.6, 0.7, 0.8],
-        "opt_ns_of_features": [2, 3, 4, 5, 6],
-        "perf_on_features": {
-            1:[0.6, 0.7, 0.5, 0.6, 0.7],
-            2:[0.7, 0.8, 0.6, 0.7, 0.8],]
-        }
-    }
-    """
-    # Aggregate the results
-    fitted_objects_dict = {}
-    performances_dict = {}
-
-    for result in results:
-        output, fitted_objects, perforamances = result
-        
-        # Aggregate the fitted objects
-        if output not in fitted_objects_dict:
-            fitted_objects_dict[output] = []
-        fitted_objects_dict[output].append(fitted_objects)
-
-        # Aggregate the performances
-        if output not in performances_dict:
-            performances_dict[output] = []
-        performances_dict[output].append(perforamances)
-
-    return fitted_objects_dict, performances_dict
-
-def save_results(fitted_objects_dict, performances_dict):
+def save_results(results, output_dir):
     """Save the results."""
-    joblib.dump(fitted_objects_dict, "fitted_objects_dict.joblib")
-    joblib.dump(performances_dict, "performances_dict.joblib")
+    os.makedirs(output_dir, exist_ok=True)
+    joblib.dump(results, os.path.join(output_dir, "results.joblib"))
+    pd.DataFrame([
+        {
+            "output": output,
+            "n items": len(result["items"]),
+            "test performance": result["test_performance"],
+            "items": ", ".join(result["items"]),
+        }
+        for output, result in results.items()
+    ]).to_csv(os.path.join(output_dir, "recommended_items.csv"), index=False)
 
 
 def main():
@@ -72,24 +47,22 @@ def main():
     config = Config()
     config.load_config(args.config_path, args.mode)
     print("Config loaded")
-    print("DEBUG outer cv", config.get_item("outer cv"), "\n")
-    print("DEBUG outer cv.cv", config.get_item("outer cv.cv"), "\n")
-    
+
     # Load the dataset
     data_loader = DataLoader(args.data_path, config)
     data = data_loader.load_data()
     output_columns = data_loader.get_output_columns()
     print(f"Data loaded, {len(output_columns)} output columns found")
-    
+
     # Create a multiprocessing Pool to process output columns in parallel
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
         results = pool.map(
-            process_output, 
-            [(column, data, config) for column in output_columns]
+            process_output,
+            [(column, output_columns, data, config) for column in output_columns]
     )
 
-    fitted_objects_dict, performances_dict = aggregate_results(results)
-    save_results(fitted_objects_dict, performances_dict)
+    output_dir = os.path.splitext(os.path.basename(args.data_path))[0]
+    save_results(dict(results), output_dir)
 
     print(f"Done! Total time: {time.time() - start_time} seconds")
 

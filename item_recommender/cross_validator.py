@@ -1,7 +1,9 @@
-from item_recommender.data_splitter import DataSplitter
+import numpy as np
+from sklearn.model_selection import StratifiedKFold
 from item_recommender.hyperparameter_search import HyperparameterSearch
 from item_recommender.evaluator import Evaluator
 from item_recommender.feature_subset_extractor import FeatureSubsetExtractor
+from item_recommender.model import make_model
 
 class CrossValidator:
     """Perform cross-validation manually"""
@@ -10,12 +12,15 @@ class CrossValidator:
         self.config = config
         self.split_data = split_data
         self.output_column = output_column
-        self.n_features_to_check = config.get_item("outer cv.n features to check")
-        self.metric = config.get_item("outer cv.metric")
-        self.cv = config.get_item("outer cv.cv")
-        
-        self.cv_search_objects = []
-        self.performance = None
+        self.metric = config.get_item("metric")
+        self.percentage_for_opt_n_features = config.get_item(
+            "percentage for opt n features"
+        )
+        self.cv = StratifiedKFold(
+            n_splits=config.get_item("outer cv n splits"),
+            shuffle=True,
+            random_state=0
+        )
 
     def cross_validate(self):
         """Perform outer cross-validation on the training set."""
@@ -24,77 +29,78 @@ class CrossValidator:
 
         print(f"Outer cross-validation for {self.output_column}")
 
-        for i, fold in enumerate(self.cv.split(X_train, y_train)):
+        performances = []
+        for i, (train_index, test_index) in enumerate(self.cv.split(X_train, y_train)):
             print(f"Fold {i + 1}/{self.cv.get_n_splits()}")
 
-            # Split the training set into train and test folds
-            train_index, test_index = fold
-            X_train_fold, X_test_fold = X_train.iloc[train_index], X_train.iloc[test_index]
-            y_train_fold, y_test_fold = y_train.iloc[train_index], y_train.iloc[test_index]
-
-            # Fit hyperparameter search on the training fold
-            search_object = HyperparameterSearch(X_train_fold, y_train_fold, self.config)
-            search_object.search()
-
-            # Save the search object
-            self.cv_search_objects.append(search_object)
-
-            # Get the performance of the best model on the test fold
-            self.performance = self._evaluate_performance_for_fold(
-                search_object.best_model,
-                X_test_fold,
-                y_test_fold
+            _, performance = self._fit_and_evaluate(
+                X_train.iloc[train_index],
+                y_train.iloc[train_index],
+                X_train.iloc[test_index],
+                y_train.iloc[test_index]
             )
+            performances.append(performance)
 
-        return self.output_column, self.cv_search_objects, self.performance
-    
-    def _evaluate_performance_for_fold(self, model, X_test, y_test):
-        # Evaluate performance on all features
-        perf_all_features = self._evaluate_performance(model, X_test, y_test)
+        return performances
 
-        # Evaluate performance on all checked features
-        features = FeatureSubsetExtractor(model, self.config).get_n_feature_indices(
-            self.n_features_to_check
-        )
-        perf_all_checked_features = self._evaluate_performance(
-            model, 
-            X_test.iloc[:, features], 
-            y_test
-        )
+    def recommend(self, cv_performances):
+        """
+        Select features on the whole training set and evaluate them on the test
+        set, using the optimal number of features from cross-validation.
+        """
+        opt_n = self._get_opt_n(cv_performances)
 
-        # Evaluate performance on every subset
-        opt_ns_of_features, perf_on_features = self._evaluate_performance_on_features(
-            model, 
-            X_test, 
-            y_test
+        subsets, test_performances = self._fit_and_evaluate(
+            self.split_data["X_train"],
+            self.split_data["y_train"],
+            self.split_data["X_test"],
+            self.split_data["y_test"]
         )
 
         return {
-            "perf_all_features": perf_all_features,
-            "perf_all_checked_features": perf_all_checked_features,
-            "opt_ns_of_features": opt_ns_of_features,
-            "perf_on_features": perf_on_features
+            "items": subsets[opt_n],
+            "test_performance": test_performances["perf_on_features"][opt_n],
+            "test_performances": test_performances,
+            "cv_performances": cv_performances,
         }
 
-    def _evaluate_performance_on_features(self, model, X_test, y_test):
-        # Evaluate performance on all checked features
-        perf_on_features = {}
+    def _get_opt_n(self, cv_performances):
+        """
+        Return the optimal number of features (first subset where mean
+        performance reaches the specified percent of the max performance).
+        """
+        mean_perf = {
+            n: np.mean([perf["perf_on_features"][n] for perf in cv_performances])
+            for n in cv_performances[0]["perf_on_features"]
+        }
+        max_perf = max(mean_perf.values())
+        for n in sorted(mean_perf):
+            if mean_perf[n] >= max_perf * self.percentage_for_opt_n_features:
+                return n
 
-        feature_selector = FeatureSubsetExtractor(model, self.config)
+    def _fit_and_evaluate(self, X_train, y_train, X_test, y_test):
+        search = HyperparameterSearch(X_train, y_train, self.config)
+        search.search()
+        params = search.best_params
 
-        for n_features in range(1, self.n_features_to_check + 1):
+        subsets = FeatureSubsetExtractor(params, self.config).get_subsets(
+            X_train, y_train
+        )
 
-            features = feature_selector.get_n_feature_indices(n_features)
-            perf_on_features[n_features].append(self._evaluate_performance(
-                model, 
-                X_test.iloc[:, features], 
-                y_test
-            ))
-    
-        opt_n_of_features = feature_selector.get_opt_n()
+        performance = {
+            "perf_all_features": self._evaluate_performance(
+                params, X_train, y_train, X_test, y_test
+            ),
+            "perf_on_features": {
+                n: self._evaluate_performance(
+                    params, X_train[features], y_train, X_test[features], y_test
+                )
+                for n, features in subsets.items()
+            },
+        }
+        return subsets, performance
 
-        return opt_n_of_features, perf_on_features
-
-    def _evaluate_performance(self, model, X_test, y_test):
+    def _evaluate_performance(self, params, X_train, y_train, X_test, y_test):
+        model = make_model(**params).fit(X_train, y_train)
         evaluator = Evaluator(model, X_test, y_test)
         return evaluator.evaluate(self.metric)

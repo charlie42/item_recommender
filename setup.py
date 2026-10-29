@@ -5,7 +5,11 @@ setup(
     version="1.0.0",
     packages=find_packages(),
     install_requires=[
-        # List your project's dependencies here
+        "mlxtend",
+        "scikit-learn",
+        "pandas",
+        "pyyaml",
+        "joblib",
     ],
     entry_points={
         'console_scripts': [

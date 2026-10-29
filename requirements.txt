@@ -1,6 +1,6 @@
 mlxtend
 scikit-learn
-pandas==1.5.3
+pandas
 pyyaml
 joblib
 dsutils

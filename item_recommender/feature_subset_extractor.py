@@ -1,42 +1,38 @@
+from sklearn.feature_selection import RFE
+from sklearn.model_selection import StratifiedKFold
+from mlxtend.feature_selection import SequentialFeatureSelector as SFS
+from item_recommender.model import make_model
+
 class FeatureSubsetExtractor:
-    """Get feature subsets from a fitted pipeline"""
+    """Get the best feature subset of each size with RFE then SFS"""
 
-    FEATURE_SELECTORS = ["rfe", "sfs"]
-    
-    def __init__(self, pipeline, config):
-        self.fitted_feature_selector = self._get_feature_selector(pipeline)
-        self.percentage_for_opt_n_features = config.get_specific_item(
-            "percentage_for_opt_n_features"
+    def __init__(self, model_params, config):
+        self.model_params = model_params
+        self.n_features_to_check = config.get_item("n features to check")
+        self.metric = config.get_item("metric")
+        self.n_splits = config.get_item("inner cv n splits")
+
+    def get_subsets(self, X, y):
+        """Return a dictionary of {n: names of the best n features}."""
+        rfe = RFE(
+            make_model(**self.model_params),
+            n_features_to_select=self.n_features_to_check,
+            importance_getter="named_steps.model.coef_",
         )
+        rfe.fit(X, y)
+        rfe_columns = X.columns[rfe.support_]
 
-    def _get_feature_selector(self, pipeline):
-        """
-        Return the last feature selector from the pipeline from the 
-        hyperparameter search object. 
-        """
-        step_names = [step[0] for step in pipeline.steps]
-        for name in reversed(step_names):
-            if name in self.FEATURE_SELECTORS:
-                return pipeline.named_steps[name]
-            
-    def get_n_feature_indices(self, n):
-        """Return the indices of the n most important features."""
-        return self.fitted_feature_selector.get_metric_dict()[n]["feature_idx"]
-    
-    def get_opt_n(self):
-        """
-        Return the optimal number of features (first subset where performance 
-        reaches the specified percent of the max oerformance).
-        """
+        sfs = SFS(
+            make_model(**self.model_params),
+            k_features=self.n_features_to_check,
+            forward=True,
+            floating=True,
+            scoring=self.metric,
+            cv=StratifiedKFold(n_splits=self.n_splits, shuffle=True, random_state=0),
+        )
+        sfs.fit(X[rfe_columns], y)
 
-        # Get the max performance from get_metric_dict()[SUBSET]['avg_score']
-        metric_dict = self.fitted_feature_selector.get_metric_dict()
-        max_perf = max([metric_dict[subset]["avg_score"] for subset in metric_dict])
-
-        # Get the optimal number of features
-        for subset in metric_dict:
-            # If the performance is within the specified percent of the max performance
-            if metric_dict[subset]["avg_score"] >= max_perf * self.percentage_for_opt_n_features:
-                return subset
-        
-        
+        return {
+            n: list(rfe_columns[list(subset["feature_idx"])])
+            for n, subset in sfs.get_metric_dict().items()
+        }

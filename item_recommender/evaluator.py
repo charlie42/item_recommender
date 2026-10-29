@@ -1,12 +1,10 @@
 from sklearn.metrics import roc_auc_score
-from scipy.stats import gmean
 
 class Evaluator:
     """Evaluate the performance of a model"""
 
     METRIC_DICT = {
         "roc_auc": roc_auc_score,
-        "gmean": gmean,
     }
 
     def __init__(self, model, X_test, y_test):

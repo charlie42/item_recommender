@@ -5,8 +5,9 @@ class DataSplitter:
     Split the data into train and test sets.
     """
 
-    def __init__(self, data, output_column):
+    def __init__(self, data, output_columns, output_column):
         self.data = data
+        self.output_columns = output_columns
         self.output_column = output_column
         self.split_data = None
         
@@ -29,8 +30,8 @@ class DataSplitter:
 
         # Split train and test sets
         X_train, X_test, y_train, y_test = train_test_split(
-            self.data, 
-            self.data[self.output_column], 
+            self.data.drop(columns=self.output_columns),
+            self.data[self.output_column],
             test_size=split_percentage, 
             stratify=self.data[self.output_column], 
             random_state=1)
