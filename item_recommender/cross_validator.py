@@ -8,6 +8,8 @@ from item_recommender.model import make_model
 class CrossValidator:
     """Perform cross-validation manually"""
 
+    CHANCE_PERFORMANCE = 0.5
+
     def __init__(self, split_data, output_column, config):
         self.config = config
         self.split_data = split_data
@@ -67,15 +69,19 @@ class CrossValidator:
     def _get_opt_n(self, cv_performances):
         """
         Return the optimal number of features (first subset where mean
-        performance reaches the specified percent of the max performance).
+        performance reaches the specified percent of the max improvement over
+        chance).
         """
         mean_perf = {
             n: np.mean([perf["perf_on_features"][n] for perf in cv_performances])
             for n in cv_performances[0]["perf_on_features"]
         }
         max_perf = max(mean_perf.values())
+        threshold = self.CHANCE_PERFORMANCE + self.percentage_for_opt_n_features * (
+            max_perf - self.CHANCE_PERFORMANCE
+        )
         for n in sorted(mean_perf):
-            if mean_perf[n] >= max_perf * self.percentage_for_opt_n_features:
+            if mean_perf[n] >= threshold:
                 return n
 
     def _fit_and_evaluate(self, X_train, y_train, X_test, y_test):
