@@ -28,12 +28,14 @@ class DataSplitter:
     def _split_data(self, split_percentage):
         """Split the data into train and test sets."""
 
+        data = self.data[self.data[self.output_column].notna()]
+
         # Split train and test sets
         X_train, X_test, y_train, y_test = train_test_split(
-            self.data.drop(columns=self.output_columns),
-            self.data[self.output_column],
-            test_size=split_percentage, 
-            stratify=self.data[self.output_column], 
+            data.drop(columns=self.output_columns),
+            data[self.output_column],
+            test_size=split_percentage,
+            stratify=data[self.output_column],
             random_state=1)
         
         return X_train, X_test, y_train, y_test

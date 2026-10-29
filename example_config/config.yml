@@ -6,6 +6,7 @@ outer cv n splits: 5
 inner cv n splits: 5
 hp search n iter: 500
 output column prefix: "Diag."
+min class size: 50
 modes:
   DEV:
     outer cv n splits: 2

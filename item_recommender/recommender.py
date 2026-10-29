@@ -52,13 +52,23 @@ def main():
     data_loader = DataLoader(args.data_path, config)
     data = data_loader.load_data()
     output_columns = data_loader.get_output_columns()
+    output_columns_to_process = data_loader.get_output_columns_to_process(
+        output_columns
+    )
     print(f"Data loaded, {len(output_columns)} output columns found")
+    print(
+        "Skipping output columns with too few samples in a class:",
+        sorted(set(output_columns) - set(output_columns_to_process))
+    )
 
     # Create a multiprocessing Pool to process output columns in parallel
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as pool:
         results = pool.map(
             process_output,
-            [(column, output_columns, data, config) for column in output_columns]
+            [
+                (column, output_columns, data, config)
+                for column in output_columns_to_process
+            ]
     )
 
     output_dir = os.path.splitext(os.path.basename(args.data_path))[0]

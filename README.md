@@ -30,7 +30,7 @@ Or, from the project directory:
 Replace [DATA_PATH] with the path to your dataset in csv format, and [CONFIG_PATH] with the path to the config file. The example of the config file format is in the example_config subdirectory.
 
 Dataset format:
-- Output column names should start with the output column prefix from the config ("Diag." by default), and contain 0 or 1.
+- Output column names should start with the output column prefix from the config ("Diag." by default), and contain 0 or 1. Rows with a missing value in an output column are skipped for that output.
 - All other columns are used as items, and should be numeric. Missing values are allowed.
 
 The name of the dataset file will be used as the name of the directory where the output will be stored. It contains:
@@ -48,6 +48,7 @@ Config settings:
 - `outer cv n splits`, `inner cv n splits`: number of cross-validation folds.
 - `hp search n iter`: number of hyperparameter combinations to try.
 - `output column prefix`: prefix of the output column names.
+- `min class size`: outputs with fewer positive (or negative) samples than this are skipped.
 
 ## License
 This project is licensed under the MIT License.
