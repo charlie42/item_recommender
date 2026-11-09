@@ -1,6 +1,7 @@
-mlxtend
-scikit-learn
-pandas
-pyyaml
-joblib
-threadpoolctl
+mlxtend==0.25.0
+scikit-learn==1.9.1
+pandas==3.1.0
+pyyaml==6.0.3
+joblib==1.6.0
+threadpoolctl==3.7.0
+matplotlib==3.11.2
