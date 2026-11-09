@@ -9,8 +9,15 @@ class DataLoader:
         self.data = None
 
     def load_data(self):
-        """Load the data from the file."""
+        """Load the data, drop excluded columns and items with too many missing values."""
         self.data = pd.read_csv(self.path, index_col=None)
+        self.data = self.data.drop(columns=self.config.get_item("exclude columns"))
+        items = self.data.drop(columns=self.get_output_columns())
+        too_sparse = items.columns[
+            items.isna().mean() > self.config.get_item("max missing fraction")
+        ]
+        print("Dropping items with too many missing values:", list(too_sparse))
+        self.data = self.data.drop(columns=too_sparse)
         return self.data
 
     def get_output_columns(self):

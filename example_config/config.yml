@@ -1,12 +1,14 @@
-metric: roc_auc
 n features to check: 27
 percentage for opt n features: 0.95
+target sensitivity: 0.8
 split percentage: 0.2
 outer cv n splits: 5
 inner cv n splits: 5
 hp search n iter: 500
 output column prefix: "Diag."
 min class size: 50
+max missing fraction: 0.4
+exclude columns: []
 modes:
   DEV:
     outer cv n splits: 2

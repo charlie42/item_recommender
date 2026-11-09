@@ -1,5 +1,5 @@
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
-from scipy.stats import loguniform
+from scipy.stats import loguniform, uniform
 from item_recommender.model import make_model
 
 class HyperparameterSearch:
@@ -16,11 +16,11 @@ class HyperparameterSearch:
         return RandomizedSearchCV(
             make_model(),
             param_distributions={
-                "model__C": loguniform(0.001, 1000),
-                "model__class_weight": ["balanced", None],
+                "model__C": loguniform(1e-5, 1e4),
+                "model__l1_ratio": uniform(0, 1),
             },
             n_iter=self.config.get_item("hp search n iter"),
-            scoring=self.config.get_item("metric"),
+            scoring="roc_auc",
             cv=StratifiedKFold(
                 n_splits=self.config.get_item("inner cv n splits"),
                 shuffle=True,

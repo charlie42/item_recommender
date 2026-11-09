@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "mlxtend",
-        "scikit-learn",
+        "scikit-learn>=1.8",
         "pandas",
         "pyyaml",
         "joblib",

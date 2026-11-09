@@ -34,7 +34,16 @@ def save_results(results, output_dir):
             "output": output,
             "n items": len(result["items"]),
             "test performance": result["test_performance"],
+            "threshold": result["threshold"],
+            "test sensitivity": result["test_sensitivity"],
+            "test specificity": result["test_specificity"],
             "items": ", ".join(result["items"]),
+            "item stability": ", ".join(
+                f"{stability:.0%}" for stability in result["item_stability"].values()
+            ),
+            "item coefficients": ", ".join(
+                f"{coef:.2f}" for coef in result["item_coefficients"].values()
+            ),
         }
         for output, result in results.items()
     ]).to_csv(os.path.join(output_dir, "recommended_items.csv"), index=False)

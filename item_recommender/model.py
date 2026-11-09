@@ -5,7 +5,7 @@ from sklearn.pipeline import Pipeline
 
 def make_model(**params):
     return Pipeline([
-        ("imputer", SimpleImputer(strategy="mean", keep_empty_features=True)),
+        ("imputer", SimpleImputer(strategy="median", keep_empty_features=True)),
         ("scaler", StandardScaler()),
-        ("model", LogisticRegression(**params)),
+        ("model", LogisticRegression(solver="saga", random_state=0, **params)),
     ])

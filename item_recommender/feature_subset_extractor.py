@@ -9,14 +9,14 @@ class FeatureSubsetExtractor:
     def __init__(self, model_params, config):
         self.model_params = model_params
         self.n_features_to_check = config.get_item("n features to check")
-        self.metric = config.get_item("metric")
         self.n_splits = config.get_item("inner cv n splits")
 
     def get_subsets(self, X, y):
         """Return a dictionary of {n: names of the best n features}."""
+        n_features = min(self.n_features_to_check, X.shape[1])
         rfe = RFE(
             make_model(**self.model_params),
-            n_features_to_select=self.n_features_to_check,
+            n_features_to_select=n_features,
             importance_getter="named_steps.model.coef_",
         )
         rfe.fit(X, y)
@@ -24,10 +24,10 @@ class FeatureSubsetExtractor:
 
         sfs = SFS(
             make_model(**self.model_params),
-            k_features=self.n_features_to_check,
+            k_features=n_features,
             forward=True,
             floating=True,
-            scoring=self.metric,
+            scoring="roc_auc",
             cv=StratifiedKFold(n_splits=self.n_splits, shuffle=True, random_state=0),
         )
         sfs.fit(X[rfe_columns], y)
