@@ -19,6 +19,7 @@ class NhanesBuilder:
         },
     }
     ADMIN_COLUMNS = ["SMAQUEX2"]
+    HEALTH_CARE_USE_COLUMNS = ["HUQ030", "HUQ051", "HUQ071", "HUQ090"]
     MISSING_CODES = [(7, 9), (77, 99), (777, 999), (7777, 9999), (77777, 99999)]
     MIN_AGE = 20
 
@@ -45,7 +46,7 @@ class NhanesBuilder:
         adults = demo.loc[demo["RIDAGEYR"] >= self.MIN_AGE, ["RIDAGEYR", "RIAGENDR"]]
 
         items = adults.join([self._read(name) for name in self.ITEM_FILES], how="left")
-        items = items.drop(columns=self.ADMIN_COLUMNS)
+        items = items.drop(columns=self.ADMIN_COLUMNS + self.HEALTH_CARE_USE_COLUMNS)
         items = items.select_dtypes("number").apply(self._clean_item)
 
         outputs = pd.DataFrame(index=items.index)
