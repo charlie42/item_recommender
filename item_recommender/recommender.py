@@ -32,8 +32,11 @@ def save_results(results, output_dir):
     pd.DataFrame([
         {
             "output": output,
+            "n samples": result["n_samples"],
+            "n positive": result["n_positive"],
             "n items": len(result["items"]),
             "test performance": result["test_performance"],
+            "test performance all items": result["test_performance_all_items"],
             "threshold": result["threshold"],
             "test sensitivity": result["test_sensitivity"],
             "test specificity": result["test_specificity"],
